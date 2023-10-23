@@ -10,7 +10,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -32,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -68,6 +72,68 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+fun MyApp() {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("NaveLink")
+                }
+            )
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Bottom app bar",
+                )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = {}) {
+                Icon(Icons.Default.Add, contentDescription = "Add")
+            }
+        }
+    ){innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ){
+            Row (modifier = Modifier
+                .padding(10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                SimpleOutlinedTextFieldSample()
+                Button(onClick = { /* handle search click here */ }) {
+                    Text("Search")
+                }
+            }
+            LoadServices()
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SimpleOutlinedTextFieldSample() {
+    var text by remember { mutableStateOf("") }
+    TextField(
+        value = text,
+        onValueChange = { text = it },
+    )
 }
 
 fun getServices(callback: (List<Service>?) -> Unit){
@@ -155,76 +221,59 @@ fun ServicesWindow(services: List<Service>){
                                 fontSize = 20.sp
                             )
                         }
-                        if(showServiceInfo){
-                            Text(text = service.keywords)
-                        }
+                        if (serviceStates[service.id] == true) {
+                            ServiceDialogWindow(
+                                onDismissRequest = { serviceStates[service.id] = false },
+                                onConfirmation = {
+                                    serviceStates[service.id] = false
+                                    println("Confirmation registered") // Add logic here to handle confirmation.
+                                },
+                                title = {
+                                    Text(text = service.name)
+                                },
+                                body = {
+                                    Text("Keywords: ${service.keywords}")
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text("Geometry: ${service.geometry}}")
+                                }
 
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-fun MyApp() {
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
-                title = {
-                    Text("NaveLink")
-                }
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Bottom app bar",
-                )
+fun ServiceDialogWindow(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    title: @Composable (ColumnScope.() -> Unit),
+    body: @Composable (ColumnScope.() -> Unit)
+) {
+    AlertDialog(
+        title = {
+            Column {
+                title()
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {}) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+        text = {
+           Column {
+               body()
+           }
+        },
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = onConfirmation) {
+                Text("Confirm")
             }
-        }
-    ){innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ){
-            Row (modifier = Modifier
-                .padding(10.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                SimpleOutlinedTextFieldSample()
-                Button(onClick = { /* handle search click here */ }) {
-                    Text("Search")
-                }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Dismiss")
             }
-            LoadServices()
-        }
-    }
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SimpleOutlinedTextFieldSample() {
-    var text by remember { mutableStateOf("") }
-    TextField(
-        value = text,
-        onValueChange = { text = it },
+        },
     )
 }
+
