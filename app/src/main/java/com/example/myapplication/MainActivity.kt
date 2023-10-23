@@ -221,6 +221,8 @@ fun ServicesWindow(services: List<Service>){
                                 fontSize = 20.sp
                             )
                         }
+                        //when state is changed to actual id value
+                        //render Service Dialog Window
                         if (serviceStates[service.id] == true) {
                             ServiceDialogWindow(
                                 onDismissRequest = { serviceStates[service.id] = false },
