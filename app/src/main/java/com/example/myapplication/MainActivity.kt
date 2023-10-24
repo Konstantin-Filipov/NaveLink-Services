@@ -238,7 +238,6 @@ fun ServicesWindow(services: List<Service>){
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text("Geometry: ${service.geometry}}")
                                 }
-
                             )
                         }
                     }
