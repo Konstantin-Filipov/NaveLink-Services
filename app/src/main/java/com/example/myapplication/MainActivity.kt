@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -156,7 +156,7 @@ fun getServices(callback: (List<Service>?) -> Unit){
                         Log.i(ContentValues.TAG, "onResponse: ID: ${service.id}")
                         Log.i(ContentValues.TAG, "onResponse: Name: ${service.name}")
                         Log.i(ContentValues.TAG, "onResponse: Keywords: ${service.keywords}")
-                        Log.i(ContentValues.TAG, "onResponse: Geometry: ${service.geometry}")
+                        Log.i(ContentValues.TAG, "onResponse: Geometry Type: ${service.geometry}")
                     }
                 }
                 callback(serviceList)
@@ -185,6 +185,7 @@ fun LoadServices(){
     }
     ServicesWindow(serviceState.value)
 }
+
 
 @Composable
 fun ServicesWindow(services: List<Service>){
@@ -224,19 +225,22 @@ fun ServicesWindow(services: List<Service>){
                         //when state is changed to actual id value
                         //render Service Dialog Window
                         if (serviceStates[service.id] == true) {
+
+                            val geometryStr = service.geometry
+                            val geometryArray = formatGeometry(geometryStr)
+
                             ServiceDialogWindow(
                                 onDismissRequest = { serviceStates[service.id] = false },
                                 onConfirmation = {
                                     serviceStates[service.id] = false
-                                    println("Confirmation registered") // Add logic here to handle confirmation.
+                                    //implement UPDATE feature here
                                 },
                                 title = {
                                     Text(text = service.name)
                                 },
+
                                 body = {
-                                    Text("Keywords: ${service.keywords}")
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text("Geometry: ${service.geometry}}")
+                                    Text(text = service.geometry)
                                 }
                             )
                         }
@@ -246,6 +250,12 @@ fun ServicesWindow(services: List<Service>){
         }
     }
 }
+fun formatGeometry(geometry: String): String {
+    val splitStr = geometry.split("\"type\":", "\"coordinates\":").toTypedArray()
+    return splitStr.joinToString("|")
+}
+
+
 @Composable
 fun ServiceDialogWindow(
     onDismissRequest: () -> Unit,
@@ -267,7 +277,7 @@ fun ServiceDialogWindow(
         onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(onClick = onConfirmation) {
-                Text("Confirm")
+                Text("Add")
             }
         },
         dismissButton = {
@@ -277,4 +287,3 @@ fun ServiceDialogWindow(
         },
     )
 }
-
