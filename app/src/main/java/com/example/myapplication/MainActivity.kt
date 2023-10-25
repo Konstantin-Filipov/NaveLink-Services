@@ -1,3 +1,4 @@
+//Working search by keyword
 package com.example.myapplication
 
 import android.content.ContentValues
@@ -37,7 +38,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -90,7 +90,6 @@ fun getServices(callback: (List<Service>?) -> Unit){
                         Log.i(ContentValues.TAG, "onResponse: ID: ${service.id}")
                         Log.i(ContentValues.TAG, "onResponse: Name: ${service.name}")
                         Log.i(ContentValues.TAG, "onResponse: Keywords: ${service.keywords}")
-                        Log.i(ContentValues.TAG, "onResponse: Geometry: ${service.geometry}")
                     }
                 }
                 callback(serviceList)
@@ -104,10 +103,13 @@ fun getServices(callback: (List<Service>?) -> Unit){
     })
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoadServices(){
     val serviceState = remember { mutableStateOf<List<Service>>(emptyList()) }
-
+    var keywordState = remember {
+        mutableStateOf("")
+    }
     LaunchedEffect(true) {
         //LaunchedEffect for handling errors
         getServices { serviceList ->
@@ -117,13 +119,21 @@ fun LoadServices(){
             }
         }
     }
-    ServicesWindow(serviceState.value)
-}
+    val filteredServices = serviceState.value.filter { service ->
+        service.keywords.contains(keywordState.value, ignoreCase = true)}
+    Column {
+        // Add a TextField for user input
+        TextField(
+            value = keywordState.value,
+            onValueChange = { keywordState.value = it },
+            label = { Text("Enter keyword") },
+            modifier = Modifier.padding(16.dp)
+        )
+        ServicesWindow(filteredServices)
+    }}
 
 @Composable
 fun ServicesWindow(services: List<Service>){
-    val serviceStates = remember { mutableStateMapOf<Int, Boolean>() }
-
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -144,21 +154,12 @@ fun ServicesWindow(services: List<Service>){
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Get the state for the current service
-                        val showServiceInfo = serviceStates[service.id] ?: false
-
                         //title
-                        Button(onClick = {serviceStates[service.id] = !showServiceInfo}){
-                            Text(
-                                text = service.name ,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
-                            )
-                        }
-                        if(showServiceInfo){
-                            Text(text = service.keywords)
-                        }
-
+                        Text(
+                            text = service.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
                     }
                 }
             }
@@ -208,13 +209,13 @@ fun MyApp() {
             Row (modifier = Modifier
                 .padding(10.dp),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ){
+                verticalAlignment = Alignment.CenterVertically){}
+            /*{
                 SimpleOutlinedTextFieldSample()
                 Button(onClick = { /* handle search click here */ }) {
                     Text("Search")
                 }
-            }
+            }*/
             LoadServices()
         }
     }
