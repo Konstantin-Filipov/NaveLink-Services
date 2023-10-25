@@ -12,14 +12,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -227,7 +228,12 @@ fun ServicesWindow(services: List<Service>){
                         if (serviceStates[service.id] == true) {
 
                             val geometryStr = service.geometry
-                            val geometryArray = formatGeometry(geometryStr)
+                            val geometryArray = splitGeometryString(geometryStr)
+
+                            // Print each element in the array
+                            geometryArray.forEachIndexed { index, element ->
+                                Log.d("printer", "Element $index: $element")
+                            }
 
                             ServiceDialogWindow(
                                 onDismissRequest = { serviceStates[service.id] = false },
@@ -238,9 +244,8 @@ fun ServicesWindow(services: List<Service>){
                                 title = {
                                     Text(text = service.name)
                                 },
-
                                 body = {
-                                    Text(text = service.geometry)
+                                    RenderCoordinateTable(geometryArray)
                                 }
                             )
                         }
@@ -250,11 +255,53 @@ fun ServicesWindow(services: List<Service>){
         }
     }
 }
-fun formatGeometry(geometry: String): String {
-    val splitStr = geometry.split("\"type\":", "\"coordinates\":").toTypedArray()
-    return splitStr.joinToString("|")
+fun splitGeometryString(geometry: String): List<String> {
+    // Split the geometry string into an array of strings
+    val splitArray = geometry.split("[\\s,:\\[\\]\"{}]+".toRegex())
+    // Filter out empty strings and the words "type" and "coordinates"
+    return splitArray.filter { it.isNotBlank() && it !in setOf("type", "coordinates") }
 }
 
+@Composable
+fun RenderCoordinateTable(geometryArray: List<String>) {
+    // Divide the array into pairs (longitude, latitude)
+    val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
+    val polygonType = geometryArray[0]
+
+    Column {
+        // Header row for "Polygon" type
+        Text(
+            text = "Type: $polygonType",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            fontWeight = FontWeight.Bold
+        )
+
+        // Header row for coordinates
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Text(text = "Longitude", fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(48.dp))
+            Text(text = "Latitude", fontWeight = FontWeight.Bold)
+        }
+
+        // Data rows
+        coordinatePairs.forEachIndexed { _, pair ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            ) {
+                Text(text = pair[0], modifier = Modifier.weight(1f))
+                Text(text = pair[1], modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
 
 @Composable
 fun ServiceDialogWindow(
