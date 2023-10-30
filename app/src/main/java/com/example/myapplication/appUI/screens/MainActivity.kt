@@ -95,12 +95,12 @@ fun HomeScreen() {
                 .padding(10.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
-            ){
+            ){}/*{
                 SimpleOutlinedTextFieldSample()
                 Button(onClick = { /* handle search click here */ }) {
                     Text("Search")
                 }
-            }
+            }*/
             LoadServices()
         }
     }
@@ -115,10 +115,14 @@ fun SimpleOutlinedTextFieldSample() {
     )
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoadServices(){
     val serviceState = remember { mutableStateOf<List<Service>>(emptyList()) }
-
+    var keywordState = remember {
+        mutableStateOf("")
+    }
     LaunchedEffect(true) {
         //LaunchedEffect for handling errors
         getServices { serviceList ->
@@ -128,7 +132,19 @@ fun LoadServices(){
             }
         }
     }
-    ServicesWindow(serviceState.value)
+
+    val filteredServices = serviceState.value.filter { service ->
+        service.keywords.contains(keywordState.value, ignoreCase = true)}
+    Column {
+        // Add a TextField for user input
+        TextField(
+            value = keywordState.value,
+            onValueChange = { keywordState.value = it },
+            label = { Text("Enter keyword") },
+            modifier = Modifier.padding(16.dp)
+        )
+        ServicesWindow(filteredServices)
+    }
 }
 
 
