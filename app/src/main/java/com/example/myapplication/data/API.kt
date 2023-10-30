@@ -1,5 +1,6 @@
-package com.example.myapplication
+package com.example.myapplication.data
 
+import com.example.myapplication.data.Service
 import retrofit2.Call
 import retrofit2.http.GET
 

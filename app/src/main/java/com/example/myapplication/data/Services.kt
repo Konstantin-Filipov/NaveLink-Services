@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.data
 
 data class Service(
     val id: Int,
