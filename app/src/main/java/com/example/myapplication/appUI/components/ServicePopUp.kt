@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,14 +53,16 @@ fun RenderCoordinateTable(geometryArray: List<String>) {
         }
 
         // Data rows
-        coordinatePairs.forEachIndexed { _, pair ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(text = pair[0], modifier = Modifier.weight(1f))
-                Text(text = pair[1], modifier = Modifier.weight(1f))
+        LazyColumn {
+            items(coordinatePairs.size) { index ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                ) {
+                    Text(text = coordinatePairs[index][0], modifier = Modifier.weight(1f))
+                    Text(text = coordinatePairs[index][1], modifier = Modifier.weight(1f))
+                }
             }
         }
     }
@@ -81,6 +84,7 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
             serviceStates[service.id] = false
             // implement UPDATE feature here
         },
+        onCopy = {},
         title = {
             Text(text = service.name)
         },
@@ -93,6 +97,7 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
 fun ServiceDialogWindow(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
+    onCopy: () -> Unit, // copy button
     title: @Composable (ColumnScope.() -> Unit),
     body: @Composable (ColumnScope.() -> Unit)
 ) {
