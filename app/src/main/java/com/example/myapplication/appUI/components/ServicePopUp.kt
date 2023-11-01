@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,6 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.Service
+import android.content.*
+import android.content.Context.CLIPBOARD_SERVICE
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -31,7 +38,7 @@ fun splitGeometryString(geometry: String): List<String> {
 }
 
 @Composable
-fun RenderCoordinateTable(geometryArray: List<String>) {
+fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, serviceType: String) {
     // Divide the array into pairs (longitude, latitude)
     val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
     val polygonType = geometryArray[0]
@@ -57,17 +64,37 @@ fun RenderCoordinateTable(geometryArray: List<String>) {
             Text(text = "Latitude", fontWeight = FontWeight.Bold)
         }
 
-        // Data rows
-        coordinatePairs.forEachIndexed { _, pair ->
-            Row(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp)
+        ) {
+            // Data rows
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                items(coordinatePairs.size) { index ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                    ) {
+                        Text(text = coordinatePairs[index][0], modifier = Modifier.weight(1f))
+                        Text(text = coordinatePairs[index][1], modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            // Copy button
+            Button(
+                onClick = {
+                    Log.i("print", "download click!")
+                    downloadXmlFile(xmlContent)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(text = pair[0], modifier = Modifier.weight(1f))
-                Text(text = pair[1], modifier = Modifier.weight(1f))
-                
-            }
+                    .padding(8.dp)
+            ) { Text(text = "Download xml") }
         }
     }
 }
@@ -76,12 +103,7 @@ fun RenderCoordinateTable(geometryArray: List<String>) {
 fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>) {
     val geometryStr = service.geometry
     val geometryArray = splitGeometryString(geometryStr)
-    val additionalInfo = listOf(
-        "Service Type: ${service.serviceType}",
-        "Endpoint URI: ${service.endpointUri}",
-        "Instance as XML: ${service.instanceAsXml.content},${service.instanceAsXml.comment},${service.instanceAsXml.contentContentType}"
-        // Add more strings if needed
-    )
+    val serviceType = service.serviceType
 
     // Print each element in the array
     geometryArray.forEachIndexed { index, element ->
@@ -92,19 +114,16 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
         onDismissRequest = { serviceStates[service.id] = false },
         onConfirmation = {
             serviceStates[service.id] = false
-            // implement UPDATE feature here
+            // implement Add service feature here
         },
         title = {
             Text(text = service.name)
         },
         body = {
             Column {
-                RenderCoordinateTable(geometryArray)
-
+                RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
             }
-        },
-        additionalInfo = additionalInfo,
-        xmlContent = service.instanceAsXml.content
+        }
     )
 }
 fun downloadXmlFile(xmlContent: String) {
@@ -125,9 +144,7 @@ fun ServiceDialogWindow(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
     title: @Composable (ColumnScope.() -> Unit),
-    body: @Composable (ColumnScope.() -> Unit),
-    additionalInfo: List<String>,
-    xmlContent: String
+    body: @Composable (ColumnScope.() -> Unit)
 ) {
 
     AlertDialog(
@@ -138,27 +155,19 @@ fun ServiceDialogWindow(
         },
         text = {
             Column {
-                LazyColumn{
-                    item{body()}
-                    items(additionalInfo) { info ->
-                        Text(text = info)
-                    }
-                }
-
+                body()
             }
         },
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(onClick = {
-                downloadXmlFile(xmlContent)
-            }) {
-                Text("Save XML")
+            TextButton(onClick = onConfirmation) {
+                Text("Add")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
                 Text("Dismiss")
             }
-        },
+        }
     )
 }
