@@ -36,12 +36,34 @@ fun splitGeometryString(geometry: String): List<String> {
     // Filter out empty strings and the words "type" and "coordinates"
     return splitArray.filter { it.isNotBlank() && it !in setOf("type", "coordinates") }
 }
+fun geometryListToString(geometryType: String, coordinatePairs: List<List<String>>): String {
+    val geometryString = StringBuilder()
 
+    geometryString.append("$geometryType(")
+    for(i in 0 until coordinatePairs.size){
+        if (i != coordinatePairs.size-1){
+            geometryString.append(coordinatePairs[i][0])
+            geometryString.append(" ")
+            geometryString.append(coordinatePairs[i][1])
+            geometryString.append(", ")
+        }
+        else{
+            geometryString.append(coordinatePairs[i][0])
+            geometryString.append(" ")
+            geometryString.append(coordinatePairs[i][1])
+            geometryString.append(")")
+        }
+    }
+    return geometryString.toString()
+}
 @Composable
 fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, serviceType: String) {
     // Divide the array into pairs (longitude, latitude)
     val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
     val polygonType = geometryArray[0]
+
+    // Initializing the ClipboardManager
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
 
     Column {
         // Header row for "Polygon" type
@@ -85,7 +107,19 @@ fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, servi
                     }
                 }
             }
+
             // Copy button
+            Button(
+                onClick = {
+                    Log.i("print", "copy click!")
+                    //call setText -> formatted polygon type and coordinates
+                    clipboardManager.setText(AnnotatedString((geometryListToString(polygonType, coordinatePairs))))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) { Text(text = "copy $polygonType") }
+            // Download Xml button
             Button(
                 onClick = {
                     Log.i("print", "download click!")
