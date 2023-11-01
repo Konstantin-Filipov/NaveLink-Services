@@ -146,9 +146,3 @@ fun LoadServices(){
         ServicesWindow(filteredServices)
     }
 }
-
-
-
-
-
-

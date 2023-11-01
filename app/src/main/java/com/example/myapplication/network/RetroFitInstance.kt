@@ -32,6 +32,9 @@ fun getServices(callback: (List<Service>?) -> Unit){
                         Log.i(ContentValues.TAG, "onResponse: Name: ${service.name}")
                         Log.i(ContentValues.TAG, "onResponse: Keywords: ${service.keywords}")
                         Log.i(ContentValues.TAG, "onResponse: Geometry Type: ${service.geometry}")
+                        Log.i(ContentValues.TAG,"onResponse: Service Type: ${service.serviceType}")
+                        Log.i(ContentValues.TAG,"onResponse: Endpoint URI: ${service.endpointUri}")
+                        //Log.i(ContentValues.TAG,"onResponse: Instance as XML: ${service.instanceAsXml}")
                     }
                 }
                 callback(serviceList)

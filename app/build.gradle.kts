@@ -50,6 +50,12 @@ android {
 }
 
 dependencies {
+    /*implementation ("com.google.code.gson:gson:2.8.8")
+    implementation ("org.locationtech.jts:jts-core:1.18.1")
+    implementation ("org.locationtech.jts:jts-geojson:2.11")
+    implementation("org.locationtech.jts.io:jts-io-common:1.19.0")
+    implementation ("com.fasterxml.jackson.core:jackson-databind:2.13.0")
+    implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")*/
     //retrofit dependencies
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
