@@ -170,9 +170,12 @@ fun RouteMain() {
     Column {
         //change state so it shows a button or to show RouteInfo Button
         if (!routeInitiaized.value){
-            TextButton(onClick = { loadDialogState.value = true }) {
-                Text("Create Route")
-            }
+            Button(
+                onClick = { loadDialogState.value = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) { Text(text = "create route") }
             SetRoute(
                 pointStartLon = pointStartLon,
                 onPointStartLonChange = { pointStartLon = it },
@@ -186,13 +189,16 @@ fun RouteMain() {
                 loadDialogState = loadDialogState,
                 onDismissRequest = { dismisssHandle() },
                 onConfirmation = { confirmHandle() },
-                onDeleteClick = {deleteHandle()}
+                onDeleteClick = { deleteHandle() }
             )
         }
         else{
-            TextButton(onClick = { loadDialogState.value = true }) {
-                Text("View Route")
-            }
+            Button(
+                onClick = { loadDialogState.value = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) { Text(text = "view route") }
             SetRoute(
                 pointStartLon = pointStartLon,
                 onPointStartLonChange = { pointStartLon = it },
@@ -206,7 +212,7 @@ fun RouteMain() {
                 loadDialogState = loadDialogState,
                 onDismissRequest = { loadDialogState.value = false },
                 onConfirmation = { confirmHandle() },
-                onDeleteClick = {deleteHandle()}
+                onDeleteClick = { deleteHandle() }
             )
         }
     }
