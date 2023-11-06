@@ -23,9 +23,13 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.Service
 import android.content.*
 import android.content.Context.CLIPBOARD_SERVICE
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -131,7 +135,7 @@ fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, servi
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
-            ) { Text(text = "copy $polygonType") }
+            ) { Text(text = "Copy $polygonType") }
             // Download Xml button
             Button(
                 onClick = {
@@ -168,6 +172,13 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
         },
         body = {
             Column {
+                Text(buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)){
+                        append("Description: ")
+                    }
+                    append(service.instanceAsXml.content.substringAfter("<ServiceInstanceSchema:description>").substringBefore("</ServiceInstanceSchema:description>"))
+                })
+                Spacer(modifier = Modifier.height(100.dp))
                 RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
             }
         }
