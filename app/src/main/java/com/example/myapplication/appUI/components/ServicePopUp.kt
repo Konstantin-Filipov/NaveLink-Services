@@ -178,7 +178,7 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                     }
                     append(service.instanceAsXml.content.substringAfter("<ServiceInstanceSchema:description>").substringBefore("</ServiceInstanceSchema:description>"))
                 })
-                Spacer(modifier = Modifier.height(100.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
             }
         }
