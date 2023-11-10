@@ -57,6 +57,9 @@ dependencies {
     implementation ("com.fasterxml.jackson.core:jackson-databind:2.13.0")
     implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")*/
     //retrofit dependencies
+    val room_version = "2.6.0"
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")

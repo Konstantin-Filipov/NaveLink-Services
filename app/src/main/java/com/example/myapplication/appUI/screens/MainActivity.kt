@@ -28,14 +28,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.room.Room
+import androidx.room.Room.databaseBuilder
 import com.example.myapplication.appUI.components.ServicesWindow
 import com.example.myapplication.appUI.components.RouteMain
 import com.example.myapplication.data.Service
+import com.example.myapplication.data.database.ServiceDatabase
 import com.example.myapplication.network.getServices
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        var database = databaseBuilder(
+            applicationContext,
+            ServiceDatabase::class.java, "service_database"
+        ).build()
+
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {

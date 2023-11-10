@@ -106,12 +106,12 @@ fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, servi
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp)
+                .padding(4.dp)
         ) {
             // Data rows
             LazyColumn(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(10f)
             ) {
                 items(coordinatePairs.size) { index ->
                     Row(
@@ -124,28 +124,48 @@ fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, servi
                     }
                 }
             }
-
             // Copy button
+            Row (
+                modifier = Modifier
+                    .weight(5f, true)
+                    .fillMaxWidth()
+            ) {
+                // Download Xml button
+                Button(
+                    onClick = {
+                        Log.i("print", "download click!")
+                        downloadXmlFile(xmlContent)
+                    },
+                    modifier = Modifier
+                        .padding(8.dp)
+                ) { Text(text = "Get XML") }
+                Button(
+                    onClick = {
+                        Log.i("print", "Edit button was clicked")
+                        // insert edit call here
+                    },
+                    modifier = Modifier
+                        .padding(8.dp)
+                ) { Text(text = "Set Note") }
+            }
             Button(
                 onClick = {
                     Log.i("print", "copy click!")
                     //call setText -> formatted polygon type and coordinates
-                    clipboardManager.setText(AnnotatedString((geometryListToString(polygonType, coordinatePairs))))
+                    clipboardManager.setText(
+                        AnnotatedString(
+                            (geometryListToString(
+                                polygonType,
+                                coordinatePairs
+                            ))
+                        )
+                    )
                 },
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(8.dp)
+                    .fillMaxWidth()
+                    .weight(5f, true)
             ) { Text(text = "Copy $polygonType") }
-            // Download Xml button
-            Button(
-                onClick = {
-                    Log.i("print", "download click!")
-                    downloadXmlFile(xmlContent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) { Text(text = "Download xml") }
         }
     }
 }
@@ -171,15 +191,109 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
             Text(text = service.name)
         },
         body = {
-            Column {
-                Text(buildAnnotatedString {
-                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)){
-                        append("Description: ")
+            LazyColumn {
+                item {
+                    Text(buildAnnotatedString {
+                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                            append("Description: ")
+                        }
+                        append(
+                            service.instanceAsXml.content.substringAfter("<ServiceInstanceSchema:description>")
+                                .substringBefore("</ServiceInstanceSchema:description>")
+                        )
+                    })
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text("Note: ")
+                    Spacer(modifier = Modifier.height(40.dp))
+                    //RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
+
+                }
+                item {
+                    val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
+                    val polygonType = geometryArray[0]
+
+                    // Initializing the ClipboardManager
+                    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+
+                    // Header row for "Polygon" type
+                    Text(
+                        text = "Type: $polygonType",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Header row for coordinates
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                    ) {
+                        Text(text = "Longitude", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(48.dp))
+                        Text(text = "Latitude", fontWeight = FontWeight.Bold)
                     }
-                    append(service.instanceAsXml.content.substringAfter("<ServiceInstanceSchema:description>").substringBefore("</ServiceInstanceSchema:description>"))
-                })
-                Spacer(modifier = Modifier.height(20.dp))
-                RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
+
+
+                    // Data rows
+                    this@LazyColumn.items(coordinatePairs.size) { index ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp)
+                        ) {
+                            Text(text = coordinatePairs[index][0], modifier = Modifier.weight(1f))
+                            Text(text = coordinatePairs[index][1], modifier = Modifier.weight(1f))
+                        }
+                    }
+                    this@LazyColumn.item {
+                        Row(
+                            modifier = Modifier
+                                .weight(5f, true)
+                                .fillMaxWidth()
+                        ) {
+                            // Download Xml button
+                            Button(
+                                onClick = {
+                                    Log.i("print", "download click!")
+                                    downloadXmlFile(service.instanceAsXml.content)
+                                },
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) { Text(text = "Get XML") }
+                            // Edit note button
+                            Button(
+                                onClick = {
+                                    Log.i("print", "Edit button was clicked")
+                                    // insert edit call here
+
+                                },
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) { Text(text = "Set Note") }
+                        }
+                        // Copy button
+                        Button(
+                            onClick = {
+                                Log.i("print", "copy click!")
+                                //call setText -> formatted polygon type and coordinates
+                                clipboardManager.setText(
+                                    AnnotatedString(
+                                        (geometryListToString(
+                                            polygonType,
+                                            coordinatePairs
+                                        ))
+                                    )
+                                )
+                            },
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .weight(5f, true)
+                        ) { Text(text = "Copy $polygonType") }
+                    }
+                }
             }
         }
     )
