@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.myapplication.appUI.components
 
 import android.os.Environment
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -21,15 +22,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.Service
-import android.content.*
-import android.content.Context.CLIPBOARD_SERVICE
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import com.example.myapplication.data.database.ServiceDao
+import com.example.myapplication.data.database.ServiceDatabase
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -73,6 +83,9 @@ fun downloadXmlFile(xmlContent: String) {
         Log.e("FileDownload", "Error while downloading file: ${e.message}")
     }
 }
+
+// Redundant method, coordinate table rendered within ServicePopup LazyColumn -> items{}
+// composables instead
 @Composable
 fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, serviceType: String) {
     // Divide the array into pairs (longitude, latitude)
@@ -171,10 +184,12 @@ fun RenderCoordinateTable(geometryArray: List<String>, xmlContent: String, servi
 }
 
 @Composable
-fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>) {
+fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>, db: ServiceDatabase) {
     val geometryStr = service.geometry
     val geometryArray = splitGeometryString(geometryStr)
     val serviceType = service.serviceType
+    val serviceDao = db.serviceDao()
+
 
     // Print each element in the array
     geometryArray.forEachIndexed { index, element ->
@@ -191,7 +206,17 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
             Text(text = service.name)
         },
         body = {
+            val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
+            val polygonType = geometryArray[0]
+
+            val noteState = remember { mutableStateOf("") } // forces recomposition and DB call
+
+            val setNoteState = remember { mutableStateOf(false) }
+            // Initializing the ClipboardManager
+            val clipboardManager: ClipboardManager = LocalClipboardManager.current
+
             LazyColumn {
+                // Check the LazyColumn again, data items are duplicating on scroll (at end of list)
                 item {
                     Text(buildAnnotatedString {
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
@@ -203,18 +228,18 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                         )
                     })
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text("Note: ")
+
+                    runBlocking {
+                        launch {
+                            noteState.value = serviceDao.getNoteByID(service.id)
+                        }
+                    }
+
+                    Text("Note: ${noteState.value ?: ""}")
                     Spacer(modifier = Modifier.height(40.dp))
-                    //RenderCoordinateTable(geometryArray, service.instanceAsXml.content, serviceType)
 
                 }
                 item {
-                    val coordinatePairs = geometryArray.subList(1, geometryArray.size).chunked(2)
-                    val polygonType = geometryArray[0]
-
-                    // Initializing the ClipboardManager
-                    val clipboardManager: ClipboardManager = LocalClipboardManager.current
-
                     // Header row for "Polygon" type
                     Text(
                         text = "Type: $polygonType",
@@ -234,10 +259,11 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                         Spacer(modifier = Modifier.width(48.dp))
                         Text(text = "Latitude", fontWeight = FontWeight.Bold)
                     }
+                }
 
 
                     // Data rows
-                    this@LazyColumn.items(coordinatePairs.size) { index ->
+                    items(coordinatePairs.size) { index ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -247,7 +273,7 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                             Text(text = coordinatePairs[index][1], modifier = Modifier.weight(1f))
                         }
                     }
-                    this@LazyColumn.item {
+                    item {
                         Row(
                             modifier = Modifier
                                 .weight(5f, true)
@@ -267,11 +293,18 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                                 onClick = {
                                     Log.i("print", "Edit button was clicked")
                                     // insert edit call here
-
+                                    setNoteState.value = true
                                 },
                                 modifier = Modifier
                                     .padding(8.dp)
                             ) { Text(text = "Set Note") }
+
+                            if(setNoteState.value){
+                                setNoteDialog(setNoteState, service, serviceDao, noteState)
+                                Log.i("confirmButton - State check", "${setNoteState.value}")
+                            }
+
+
                         }
                         // Copy button
                         Button(
@@ -293,11 +326,68 @@ fun LoadServiceWindow(service: Service, serviceStates: MutableMap<Int, Boolean>)
                                 .weight(5f, true)
                         ) { Text(text = "Copy $polygonType") }
                     }
-                }
             }
         }
     )
 }
+
+@Composable
+private fun setNoteDialog(
+    setNoteState: MutableState<Boolean>,
+    service: Service,
+    serviceDao: ServiceDao,
+    noteState: MutableState<String>
+) {
+
+    val noteText = remember { mutableStateOf("") }
+
+    AlertDialog(
+        title = {
+            Column {
+                Text(text = "Set Note")
+            }
+        },
+        text = {
+               editNoteField(noteText, onNoteTextChange = { noteText.value = it })
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                setNoteState.value = false
+                Log.i("dismissButt", "here1")
+            }) {
+               Text(text = "Dismiss")
+            }
+        },
+        onDismissRequest = {
+            setNoteState.value = false
+            Log.i("dismissReq", "here2")
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                runBlocking {
+                    launch {
+                        serviceDao.insertService(com.example.myapplication.data.database.Service(service.id, noteText.value))
+                        serviceDao.getNoteByID(service.id)
+                    }
+                }
+                setNoteState.value = false
+                noteState.value = ""
+                Log.i("confirmButton - State check", "${setNoteState.value}")
+            }) {
+                Text(text = "Confirm")
+            }
+        })
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun editNoteField(noteText: MutableState<String>, onNoteTextChange: (String) -> Unit) {
+    Column {
+        TextField(value = noteText.value, onValueChange = { onNoteTextChange(it) }, label = { Text(text = "Enter note for this service")})
+    }
+}
+
+
 @Composable
 fun ServiceDialogWindow(
     onDismissRequest: () -> Unit,

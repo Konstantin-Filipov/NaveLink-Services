@@ -24,9 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.Service
+import com.example.myapplication.data.database.ServiceDatabase
 
 @Composable
-fun ServicesWindow(services: List<Service>) {
+fun ServicesWindow(services: List<Service>, db: ServiceDatabase) {
     val serviceStates = remember { mutableStateMapOf<Int, Boolean>() }
 
     Card(
@@ -63,7 +64,7 @@ fun ServicesWindow(services: List<Service>) {
                         //when state is changed to the actual id value
                         //render Service Dialog Window
                         if (serviceStates[service.id] == true) {
-                            LoadServiceWindow(service, serviceStates)
+                            LoadServiceWindow(service, serviceStates, db)
                         }
                     }
                 }
